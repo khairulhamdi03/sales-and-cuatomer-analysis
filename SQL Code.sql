@@ -15,7 +15,7 @@ SELECT
 FROM
   `project-431507.revou_project.transaction`
 GROUP BY product_id
-ORDER BY total_revenue
+ORDER BY total_revenue DESC
 LIMIT 5;
 
 #number of sales per month
@@ -87,6 +87,7 @@ WITH city AS (
   FROM
     `project-431507.revou_project.transaction`)
 
+#ofline store vs online store revenue
 SELECT
   customer_city,
   COUNT(customer_city) AS total
@@ -95,7 +96,7 @@ FROM
 GROUP BY 1
 ORDER By 2 DESC;
 
-#sales comparison of online stores vs offline stores
+#transaction comparison of online stores vs offline stores
 WITH data1  AS (SELECT
   store,
   COUNT(transaction_id) AS total_transaction
@@ -110,6 +111,12 @@ SELECT
 FROM 
   data1 
 GROUP BY 1,2;
+SELECT
+  store,
+  SUM(total) AS total_revenue
+FROM
+  `project-431507.revou_project.transaction`
+GROUP BY 1;
 
 #customer analysis uses RFM analysis
 WITH customer_data AS(
