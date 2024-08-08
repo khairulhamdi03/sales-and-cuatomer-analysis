@@ -239,7 +239,7 @@ SELECT
   CONCAT(recency_score,frequency_score,monetary_score) AS rfm_score,
   CASE
     WHEN recency_score = 3 AND frequency_score = 3 AND monetary_score = 3 THEN "Champion"
-    WHEN recency_score = 3 AND frequency_score = 3 AND monetary_score = 2 THEN "Loyal Csutomer"
+    WHEN recency_score = 3 AND frequency_score = 3 AND monetary_score = 2 THEN "Loyal Customer"
     WHEN recency_score = 3 AND frequency_score = 3 AND monetary_score = 1 THEN "Recent Customer"
     WHEN recency_score = 3 AND frequency_score = 2 AND monetary_score = 3 THEN "Potential Loyalist"
     WHEN recency_score = 3 AND frequency_score = 2 AND monetary_score = 2 THEN "Recent Customer"
@@ -270,4 +270,80 @@ FROM
   rfm_analysis
 LIMIT 20;
 
+#percentage of customer segmentation by RFM Analysis
+WITH customer_data AS(
+SELECT
+  DISTINCT customer_id,
+  MAX(created_at) AS last_transaction,
+  COUNT(transaction_id) AS total_transaction,
+  SUM(total) AS total
+FROM
+  `project-431507.revou_project.transaction`
+GROUP BY 1),
 
+rfm_analysis AS(
+SELECT
+  customer_id,
+  last_transaction,
+  total_transaction,
+  total,
+  NTILE(3)OVER(ORDER BY last_transaction DESC) AS recency_score,
+  NTILE(3)OVER(ORDER BY total_transaction DESC) AS frequency_score,
+  NTILE(3)OVER(ORDER BY total DESC) AS monetary_score
+FROM
+  customer_data
+),
+
+result AS (SELECT
+  customer_id,
+  recency_score,
+  frequency_score,
+  monetary_score,
+  CONCAT(recency_score,frequency_score,monetary_score) AS rfm_score,
+  CASE
+    WHEN recency_score = 3 AND frequency_score = 3 AND monetary_score = 3 THEN "Champion"
+    WHEN recency_score = 3 AND frequency_score = 3 AND monetary_score = 2 THEN "Loyal Customer"
+    WHEN recency_score = 3 AND frequency_score = 3 AND monetary_score = 1 THEN "Recent Customer"
+    WHEN recency_score = 3 AND frequency_score = 2 AND monetary_score = 3 THEN "Potential Loyalist"
+    WHEN recency_score = 3 AND frequency_score = 2 AND monetary_score = 2 THEN "Recent Customer"
+    WHEN recency_score = 3 AND frequency_score = 2 AND monetary_score = 1 THEN "Recent Customer"
+    WHEN recency_score = 3 AND frequency_score = 1 AND monetary_score = 3 THEN "Recent Customer"
+    WHEN recency_score = 3 AND frequency_score = 1 AND monetary_score = 2 THEN "Recent Customer"
+    WHEN recency_score = 3 AND frequency_score = 1 AND monetary_score = 1 THEN "Recent Customer"
+    WHEN recency_score = 2 AND frequency_score = 3 AND monetary_score = 3 THEN "Promising"
+    WHEN recency_score = 2 AND frequency_score = 3 AND monetary_score = 2 THEN "Customers Needing Attention"
+    WHEN recency_score = 2 AND frequency_score = 3 AND monetary_score = 1 THEN "Customers Needing Attention"
+    WHEN recency_score = 2 AND frequency_score = 2 AND monetary_score = 3 THEN "Customers Needing Attention"
+    WHEN recency_score = 2 AND frequency_score = 2 AND monetary_score = 2 THEN "About to Sleep"
+    WHEN recency_score = 2 AND frequency_score = 2 AND monetary_score = 1 THEN "At Risk"
+    WHEN recency_score = 2 AND frequency_score = 1 AND monetary_score = 3 THEN "At Risk"
+    WHEN recency_score = 2 AND frequency_score = 1 AND monetary_score = 2 THEN "Can't Lose Them"
+    WHEN recency_score = 2 AND frequency_score = 1 AND monetary_score = 1 THEN "Can't Lose Them"
+    WHEN recency_score = 1 AND frequency_score = 3 AND monetary_score = 3 THEN "Promising"
+    WHEN recency_score = 1 AND frequency_score = 3 AND monetary_score = 2 THEN "Hibernating"
+    WHEN recency_score = 1 AND frequency_score = 3 AND monetary_score = 1 THEN "Hibernating"
+    WHEN recency_score = 1 AND frequency_score = 2 AND monetary_score = 3 THEN "Hibernating"
+    WHEN recency_score = 1 AND frequency_score = 2 AND monetary_score = 2 THEN "Hibernating"
+    WHEN recency_score = 1 AND frequency_score = 2 AND monetary_score = 1 THEN "Hibernating"
+    WHEN recency_score = 1 AND frequency_score = 1 AND monetary_score = 3 THEN "Hibernating"
+    WHEN recency_score = 1 AND frequency_score = 1 AND monetary_score = 2 THEN "Hibernating"
+    WHEN recency_score = 1 AND frequency_score = 1 AND monetary_score = 1 THEN "Lost"
+    END AS customer_segmentation
+FROM
+  rfm_analysis),
+
+final AS (SELECT
+  customer_segmentation,
+  COUNT(customer_segmentation) AS total
+FROM
+  result
+GROUP BY 1
+ORDER BY 2 DESC)
+
+SELECT
+  customer_segmentation,
+  total,
+  ROUND((total/16096)*100,2) AS percentage
+FROM
+  final
+GROUP BY 1,2;
