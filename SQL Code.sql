@@ -144,6 +144,13 @@ SELECT
       WHEN 'November' THEN 7
       WHEN 'December' THEN 8
     END; 
+#total revenue by city
+SELECT
+  customer_city,
+  SUM(total) AS total_revebue
+FROM
+  `project-431507.revou_project.transaction`
+GROUP BY 1;
 
 #customer distribution by gender
 WITH gender AS (SELECT
@@ -176,7 +183,6 @@ WITH city AS (
   FROM
     `project-431507.revou_project.transaction`)
 
-#ofline store vs online store revenue
 SELECT
   customer_city,
   COUNT(customer_city) AS total
@@ -346,4 +352,5 @@ SELECT
   ROUND((total/16096)*100,2) AS percentage
 FROM
   final
-GROUP BY 1,2;
+GROUP BY 1,2
+ORDER BY 2 DESC;
