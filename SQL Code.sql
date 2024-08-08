@@ -19,12 +19,51 @@ ORDER BY total_revenue DESC
 LIMIT 5;
 
 #number of sales per month
+WITH monthly_sales AS (
+  SELECT 
+    FORMAT_TIMESTAMP('%B', TIMESTAMP(created_at)) AS month,
+    SUM(quantity) AS total_number_of_sales
+  FROM 
+    `project-431507.revou_project.transaction` 
+  GROUP BY month
+)
 SELECT 
-  DISTINCT (FORMAT_TIMESTAMP('%B', TIMESTAMP(created_at))) AS month,
-  SUM(quantity) AS total_number_of_sales
+  month,
+  total_number_of_sales,
+  LAG(total_number_of_sales) OVER (ORDER BY
+    CASE month
+        WHEN 'May' THEN 1
+        WHEN 'June' THEN 2
+        WHEN 'July' THEN 3
+        WHEN 'August' THEN 4
+        WHEN 'September' THEN 5
+        WHEN 'October' THEN 6
+        WHEN 'November' THEN 7
+        WHEN 'December' THEN 8
+    END) AS previous_month_sales,
+  ROUND(SAFE_DIVIDE(total_number_of_sales - LAG(total_number_of_sales) OVER (ORDER BY
+    CASE month
+        WHEN 'May' THEN 1
+        WHEN 'June' THEN 2
+        WHEN 'July' THEN 3
+        WHEN 'August' THEN 4
+        WHEN 'September' THEN 5
+        WHEN 'October' THEN 6
+        WHEN 'November' THEN 7
+        WHEN 'December' THEN 8
+    END), LAG(total_number_of_sales) OVER (ORDER BY
+    CASE month
+        WHEN 'May' THEN 1
+        WHEN 'June' THEN 2
+        WHEN 'July' THEN 3
+        WHEN 'August' THEN 4
+        WHEN 'September' THEN 5
+        WHEN 'October' THEN 6
+        WHEN 'November' THEN 7
+        WHEN 'December' THEN 8
+    END)) * 100,2) AS percentage_increase
 FROM 
-  `project-431507.revou_project.transaction` 
-GROUP BY month
+  monthly_sales
 ORDER BY
   CASE month
       WHEN 'May' THEN 1
@@ -38,6 +77,7 @@ ORDER BY
   END;
 
 #total revenue per month
+WITH revenue AS(  
   SELECT 
   DISTINCT (FORMAT_TIMESTAMP('%B', TIMESTAMP(created_at))) AS month,
   SUM(product_price*quantity) AS total_revenue
@@ -54,7 +94,56 @@ ORDER BY
       WHEN 'October' THEN 6
       WHEN 'November' THEN 7
       WHEN 'December' THEN 8
-  END;
+  END)
+SELECT
+  month,
+  total_revenue,
+  LAG(total_revenue)OVER(ORDER BY
+  CASE month
+      WHEN 'May' THEN 1
+      WHEN 'June' THEN 2
+      WHEN 'July' THEN 3
+      WHEN 'August' THEN 4
+      WHEN 'September' THEN 5
+      WHEN 'October' THEN 6
+      WHEN 'November' THEN 7
+      WHEN 'December' THEN 8
+  END 
+  ) AS previous_revenue,
+  ROUND(SAFE_DIVIDE(total_revenue - LAG(total_revenue)OVER(ORDER BY 
+  CASE month
+      WHEN 'May' THEN 1
+      WHEN 'June' THEN 2
+      WHEN 'July' THEN 3
+      WHEN 'August' THEN 4
+      WHEN 'September' THEN 5
+      WHEN 'October' THEN 6
+      WHEN 'November' THEN 7
+      WHEN 'December' THEN 8
+  END ),LAG(total_revenue)OVER(ORDER BY 
+  CASE month
+      WHEN 'May' THEN 1
+      WHEN 'June' THEN 2
+      WHEN 'July' THEN 3
+      WHEN 'August' THEN 4
+      WHEN 'September' THEN 5
+      WHEN 'October' THEN 6
+      WHEN 'November' THEN 7
+      WHEN 'December' THEN 8
+    END))*100,2) AS percentage_increase
+  FROM
+    revenue
+  ORDER BY
+    CASE month
+      WHEN 'May' THEN 1
+      WHEN 'June' THEN 2
+      WHEN 'July' THEN 3
+      WHEN 'August' THEN 4
+      WHEN 'September' THEN 5
+      WHEN 'October' THEN 6
+      WHEN 'November' THEN 7
+      WHEN 'December' THEN 8
+    END; 
 
 #customer distribution by gender
 WITH gender AS (SELECT
@@ -178,6 +267,7 @@ SELECT
     WHEN recency_score = 1 AND frequency_score = 1 AND monetary_score = 1 THEN "Lost"
     END AS customer_segmentation
 FROM
-  rfm_analysis;
+  rfm_analysis
+LIMIT 20;
 
 
